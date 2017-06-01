@@ -1,5 +1,6 @@
 package com.example.matos.bluetoothasync;
 
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
@@ -13,10 +14,14 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
+
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.UUID;
 
-public class ledControl extends AppCompatActivity {
+public class ControlScreen extends AppCompatActivity {
 
     Button btnOn, btnOff, btnDis;
     SeekBar brightness;
@@ -35,7 +40,7 @@ public class ledControl extends AppCompatActivity {
         Intent newint = getIntent();
         address = newint.getStringExtra(DeviceList.EXTRA_ADDRESS); //receive the address of the bluetooth device
 
-        //view of the ledControl
+        //view of the ControlScreen
         setContentView(R.layout.activity_led_control);
 
         //call the widgtes
@@ -147,7 +152,8 @@ public class ledControl extends AppCompatActivity {
             try
             {
                 System.out.println("Turn On");
-                btSocket.getOutputStream().write("01".toString().getBytes());
+                btSocket.getOutputStream().write("0100000000000000000".toString().getBytes());
+                new recieveBT().execute();
             }
             catch (IOException e)
             {
@@ -161,13 +167,11 @@ public class ledControl extends AppCompatActivity {
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true; //if it's here, it's almost connected
 
-
-
         @Override
         protected void onPreExecute()
         {
             System.out.println("ConnectBT on pre execute");
-            progress = ProgressDialog.show(ledControl.this, "Connecting...", "Please wait!!!");  //show a progress dialog
+            progress = ProgressDialog.show(ControlScreen.this, "Connecting...", "Please wait!!!");  //show a progress dialog
         }
 
         @Override
@@ -209,6 +213,42 @@ public class ledControl extends AppCompatActivity {
                 isBtConnected = true;
             }
             progress.dismiss();
+        }
+    }
+
+    private class recieveBT extends AsyncTask<Void, Void, Void> {
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            byte[] mmBuffer = new byte[1024];
+            int numBytes = 0;
+
+            try {
+                Thread.sleep(2000);
+                numBytes = btSocket.getInputStream().read(mmBuffer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(numBytes);
+
+            byte[] result = new byte[numBytes];
+
+            for(int i = 0; i < result.length; i++){
+                result[i] = mmBuffer[i];
+            }
+
+            String s = new String(result);
+
+            System.out.print("Result string is " + s);
+
+
+
+            return null;
         }
     }
 
