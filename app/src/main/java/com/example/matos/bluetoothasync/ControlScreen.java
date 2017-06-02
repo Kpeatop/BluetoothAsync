@@ -109,9 +109,26 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
-    private void msg(String s)
-    {
+    private void requestUpdate(){
+
+        if (btSocket!=null) {
+            try
+            {
+                System.out.println("Request Update");
+                btSocket.getOutputStream().write("update".toString().getBytes());
+            }
+            catch (IOException e)
+            {
+                onScreenMessage("Failed to send message");
+            }
+        }
+
+    }
+
+    private void onScreenMessage(String s){
+
         Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
+
     }
 
     private void Disconnect()
@@ -120,11 +137,11 @@ public class ControlScreen extends AppCompatActivity {
         {
             try
             {
-                System.out.println("Dis");
+                System.out.println("Disconnected");
                 btSocket.close(); //close connection
             }
             catch (IOException e)
-            { msg("Error");}
+            { onScreenMessage("Error");}
         }
         finish(); //return to the first layout
     }
@@ -140,7 +157,7 @@ public class ControlScreen extends AppCompatActivity {
             }
             catch (IOException e)
             {
-                msg("Error");
+                onScreenMessage("Error");
             }
         }
     }
@@ -157,7 +174,7 @@ public class ControlScreen extends AppCompatActivity {
             }
             catch (IOException e)
             {
-                msg("Error");
+                onScreenMessage("Error");
             }
         }
     }
@@ -204,12 +221,12 @@ public class ControlScreen extends AppCompatActivity {
 
             if (!ConnectSuccess)
             {
-                msg("Connection Failed. Is it a SPP Bluetooth? Try again.");
+                onScreenMessage("Connection Failed. Is it a SPP Bluetooth? Try again.");
                 finish();
             }
             else
             {
-                msg("Connected.");
+                onScreenMessage("Connected.");
                 isBtConnected = true;
             }
             progress.dismiss();
