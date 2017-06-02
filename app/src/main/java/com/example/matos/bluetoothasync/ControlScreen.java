@@ -62,7 +62,7 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                Disconnect(); //close connection and returns to first screen
+                disconnect(); //close connection and returns to first screen
             }
 
         });
@@ -72,17 +72,8 @@ public class ControlScreen extends AppCompatActivity {
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser==true){
 
-                    volumeLevel.setText(String.valueOf("Volume Level:" + progress));
-                    try{
 
-                        btSocket.getOutputStream().write(String.valueOf(progress).getBytes());
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
 
             @Override
@@ -92,6 +83,16 @@ public class ControlScreen extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    volumeLevel.setText(String.valueOf("Volume Level:" + seekBar.getProgress()));
+                    try{
+
+                        btSocket.getOutputStream().write(String.valueOf(seekBar.getProgress()).getBytes());
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
 
             }
         });
@@ -104,6 +105,7 @@ public class ControlScreen extends AppCompatActivity {
             try{
                 System.out.println("Request Update");
                 btSocket.getOutputStream().write("update".toString().getBytes());
+                new recieveBT().execute();
             }
             catch (IOException e)
             {
@@ -113,14 +115,7 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
-    private void onScreenMessage(String s){
-
-        Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
-
-    }
-
-    private void Disconnect()
-    {
+    private void disconnect() {
         if (btSocket!=null) //If the btSocket is busy
         {
             try
@@ -134,10 +129,27 @@ public class ControlScreen extends AppCompatActivity {
         finish(); //return to the first layout
     }
 
+    private void command(String command){
+
+        if (btSocket!=null) {
+            try{
+                System.out.println("Command sent");
+                btSocket.getOutputStream().write(command.getBytes());
+            }
+            catch (IOException e)
+            {
+                onScreenMessage("Failed to send command");
+            }
+        }
+
+    }
 
 
+    private void onScreenMessage(String message){
 
+        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
 
+    }
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true; //if it's here, it's almost connected
@@ -193,7 +205,6 @@ public class ControlScreen extends AppCompatActivity {
 
     private class recieveBT extends AsyncTask<Void, Void, Void> {
 
-
         @Override
         protected Void doInBackground(Void... voids) {
 
@@ -220,8 +231,6 @@ public class ControlScreen extends AppCompatActivity {
             String s = new String(result);
 
             System.out.print("Result string is " + s);
-
-
 
             return null;
         }

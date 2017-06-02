@@ -35,7 +35,7 @@
         android:layout_marginEnd="8dp" />
 
     <TextView
-        android:id="@+id/level"
+        android:id="@+id/Volume Level"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
@@ -55,6 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
+        android:max="10"
         app:layout_constraintLeft_toLeftOf="parent"
         tools:layout_editor_absoluteY="102dp" />
 
