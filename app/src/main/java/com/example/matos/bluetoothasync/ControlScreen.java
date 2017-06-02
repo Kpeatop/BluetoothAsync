@@ -1,6 +1,5 @@
 package com.example.matos.bluetoothasync;
 
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
@@ -15,10 +14,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
 
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.UUID;
 
 public class ControlScreen extends AppCompatActivity {
@@ -41,7 +37,7 @@ public class ControlScreen extends AppCompatActivity {
         address = newint.getStringExtra(DeviceList.EXTRA_ADDRESS); //receive the address of the bluetooth device
 
         //view of the ControlScreen
-        setContentView(R.layout.activity_led_control);
+        setContentView(R.layout.activity_control_screen);
 
         //call the widgtes
         btnOn = (Button)findViewById(R.id.btnOn);
@@ -161,7 +157,7 @@ public class ControlScreen extends AppCompatActivity {
             }
         }
     }
-
+    
     private void turnOnLed()
     {
         if (btSocket!=null)
