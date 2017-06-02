@@ -1,5 +1,6 @@
 package com.example.matos.bluetoothasync;
 
+import android.graphics.SweepGradient;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
@@ -7,6 +8,7 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.app.ProgressDialog;
@@ -16,17 +18,19 @@ import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class ControlScreen extends AppCompatActivity {
 
     Button btnUpdate, btnDis;
     SeekBar volume;
-    TextView volumeLevel;
+    TextView volumeLevel, erCount;
+    Switch audioOnOff;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
-    private boolean isBtConnected = false;
+    private boolean isConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     @Override
@@ -39,11 +43,23 @@ public class ControlScreen extends AppCompatActivity {
         //view of the ControlScreen
         setContentView(R.layout.activity_control_screen);
 
-        //call the widgtes
+        //Buttons
         btnUpdate = (Button)findViewById(R.id.btnUpdate);
         btnDis = (Button)findViewById(R.id.btnDis);
+
+        // Seekbar
         volume = (SeekBar)findViewById(R.id.volume);
+
+        //TextView
         volumeLevel = (TextView)findViewById(R.id.level);
+        erCount = (TextView)findViewById(R.id.erCount);
+
+        //switch
+        audioOnOff = (Switch)findViewById(R.id.audioOnOff);
+
+
+        volume.setProgress(0);
+        volume.setMax(10);
 
         new ConnectBT().execute(); //Call the class to connect
 
@@ -72,7 +88,6 @@ public class ControlScreen extends AppCompatActivity {
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
 
             }
 
@@ -105,11 +120,15 @@ public class ControlScreen extends AppCompatActivity {
             try{
                 System.out.println("Request Update");
                 btSocket.getOutputStream().write("update".toString().getBytes());
-                new recieveBT().execute();
+                String s = new receiveBT().execute().get();
             }
             catch (IOException e)
             {
                 onScreenMessage("Failed to send message");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
         }
 
@@ -144,6 +163,20 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
+    private void interpretMessage(String receivedMessage){
+
+        // TODO WHEN WE KNOW WHAT WE ARE GETTING
+
+    }
+
+    private void updateValues(String errorCount, boolean audioComp, String volumeLvl){
+
+        erCount.setText("Total error corrected: " + errorCount);
+        audioOnOff.setChecked(audioComp);
+        volumeLevel.setText("Volume Level: " + volumeLvl);
+
+    }
+
 
     private void onScreenMessage(String message){
 
@@ -167,7 +200,7 @@ public class ControlScreen extends AppCompatActivity {
             System.out.println("ConnectBT do in background");
             try
             {
-                if (btSocket == null || !isBtConnected)
+                if (btSocket == null || !isConnected)
                 {
                     myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
                     BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
@@ -197,16 +230,16 @@ public class ControlScreen extends AppCompatActivity {
             else
             {
                 onScreenMessage("Connected.");
-                isBtConnected = true;
+                isConnected = true;
             }
             progress.dismiss();
         }
     }
 
-    private class recieveBT extends AsyncTask<Void, Void, Void> {
+    private class receiveBT extends AsyncTask<Void, Void, String> {
 
         @Override
-        protected Void doInBackground(Void... voids) {
+        protected String doInBackground(Void... voids) {
 
             byte[] mmBuffer = new byte[1024];
             int numBytes = 0;
@@ -228,11 +261,11 @@ public class ControlScreen extends AppCompatActivity {
                 result[i] = mmBuffer[i];
             }
 
-            String s = new String(result);
+            String receivedMessage = new String(result);
 
-            System.out.print("Result string is " + s);
+            System.out.print("Result string is " + receivedMessage);
 
-            return null;
+            return receivedMessage;
         }
     }
 
