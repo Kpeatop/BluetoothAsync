@@ -27,32 +27,31 @@ public class DeviceList extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
-        btnPaired = (Button)findViewById(R.id.button);
+        btnPaired = (Button)findViewById(R.id.find);
         devicelist = (ListView)findViewById(R.id.listView);
 
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
-        if(myBluetooth == null)
-        {
+        if(myBluetooth == null){
+
             //Show a mensag. that thedevice has no bluetooth adapter
             Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
 
             //finish apk
             finish();
-        }
-        else{
+        } else{
 
             if (myBluetooth.isEnabled()){
 
                 // Do nothing, everything is as it is supposed to
 
-            }
-            else{
+            } else{
 
                 //Ask to the user turn the bluetooth on
                 Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(turnBTon,1);
             }
         }
+
 
         btnPaired.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,7 +60,6 @@ public class DeviceList extends AppCompatActivity {
                 pairedDevicesList(); //method that will be called
             }
         });
-
 
     }
 
@@ -88,10 +86,9 @@ public class DeviceList extends AppCompatActivity {
 
     }
 
-    private AdapterView.OnItemClickListener myListClickListener = new AdapterView.OnItemClickListener()
-    {
-        public void onItemClick (AdapterView av, View v, int arg2, long arg3)
-        {
+    private AdapterView.OnItemClickListener myListClickListener = new AdapterView.OnItemClickListener() {
+
+        public void onItemClick (AdapterView av, View v, int arg2, long arg3){
 
             // Get the device MAC address, the last 17 chars in the View
             String info = ((TextView) v).getText().toString();

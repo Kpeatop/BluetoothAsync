@@ -19,9 +19,9 @@ import java.util.UUID;
 
 public class ControlScreen extends AppCompatActivity {
 
-    Button btnOn, btnOff, btnDis;
-    SeekBar brightness;
-    TextView lumn;
+    Button btnUpdate, btnDis;
+    SeekBar volume;
+    TextView volumeLevel;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -40,29 +40,20 @@ public class ControlScreen extends AppCompatActivity {
         setContentView(R.layout.activity_control_screen);
 
         //call the widgtes
-        btnOn = (Button)findViewById(R.id.btnOn);
-        btnOff = (Button)findViewById(R.id.btnOff);
+        btnUpdate = (Button)findViewById(R.id.btnUpdate);
         btnDis = (Button)findViewById(R.id.btnDis);
-        brightness = (SeekBar)findViewById(R.id.brightness);
-        lumn = (TextView)findViewById(R.id.lumn);
+        volume = (SeekBar)findViewById(R.id.volume);
+        volumeLevel = (TextView)findViewById(R.id.level);
 
         new ConnectBT().execute(); //Call the class to connect
 
-        //commands to be sent to bluetooth
-        btnOn.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                turnOnLed();      //method to turn on
-            }
-        });
+        //commands to be sent via bluetooth
 
-        btnOff.setOnClickListener(new View.OnClickListener() {
+        btnUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v)
             {
-                turnOffLed();   //method to turn off
+                requestUpdate();   //Request update method is called
             }
         });
 
@@ -71,23 +62,25 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                Disconnect(); //close connection
+                Disconnect(); //close connection and returns to first screen
             }
+
         });
 
-        brightness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+
+        volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser==true)
-                {
-                    lumn.setText(String.valueOf(progress));
-                    try
-                    {
-                        btSocket.getOutputStream().write(String.valueOf(progress).getBytes());
-                    }
-                    catch (IOException e)
-                    {
+                if (fromUser==true){
 
+                    volumeLevel.setText(String.valueOf("Volume Level:" + progress));
+                    try{
+
+                        btSocket.getOutputStream().write(String.valueOf(progress).getBytes());
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -108,8 +101,7 @@ public class ControlScreen extends AppCompatActivity {
     private void requestUpdate(){
 
         if (btSocket!=null) {
-            try
-            {
+            try{
                 System.out.println("Request Update");
                 btSocket.getOutputStream().write("update".toString().getBytes());
             }
@@ -142,38 +134,8 @@ public class ControlScreen extends AppCompatActivity {
         finish(); //return to the first layout
     }
 
-    private void turnOffLed()
-    {
-        if (btSocket!=null)
-        {
-            try
-            {
-                System.out.println("Turn off");
-                btSocket.getOutputStream().write("11".toString().getBytes());
-            }
-            catch (IOException e)
-            {
-                onScreenMessage("Error");
-            }
-        }
-    }
-    
-    private void turnOnLed()
-    {
-        if (btSocket!=null)
-        {
-            try
-            {
-                System.out.println("Turn On");
-                btSocket.getOutputStream().write("0100000000000000000".toString().getBytes());
-                new recieveBT().execute();
-            }
-            catch (IOException e)
-            {
-                onScreenMessage("Error");
-            }
-        }
-    }
+
+
 
 
 
