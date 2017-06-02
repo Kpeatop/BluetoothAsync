@@ -35,26 +35,17 @@ public class DeviceList extends AppCompatActivity {
 
         if(myBluetooth == null){
 
-            //Shows message telling device has no bluetooth adapter
-            Toast.makeText(getApplicationContext(), "Bluetooth Device Not Available", Toast.LENGTH_LONG).show();
-
-            // finish app
+            onScreenMessage("Bluetooth Device Not Available");
+            // Close app
             finish();
 
         } else{
-
-            if (myBluetooth.isEnabled()){
-
-                // Do nothing, everything is as it is supposed to be
-
-            } else{
-
+            if (!myBluetooth.isEnabled()){
                 //Ask user to turn bluetooth on
-                Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE); // this request needs permission in andriod
+                Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(turnBTon,1);
             }
         }
-
 
         btnPaired.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,35 +66,41 @@ public class DeviceList extends AppCompatActivity {
 
             for(BluetoothDevice bt : pairedDevices) {
 
-                pairedList.add(bt.getName() + "\n" + bt.getAddress()); //List all the names and addresses of paired devices
+                pairedList.add(bt.getName() + "\n" + bt.getAddress()); //Adds all the paired devices to a list, where the list elements will be clickable
 
             }
         }
         else{
-            Toast.makeText(getApplicationContext(), "No Paired Bluetooth Devices Found.", Toast.LENGTH_LONG).show();
+            onScreenMessage("No Paired Bluetooth Devices Found.");
         }
 
         final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, pairedList);
         pairedDeviceList.setAdapter(adapter);
+
         pairedDeviceList.setOnItemClickListener(myListClickListener); //Method called when the device from the list is clicked
 
     }
 
+    //The method for clicking on one of the paired devices
     private AdapterView.OnItemClickListener myListClickListener = new AdapterView.OnItemClickListener() {
 
         public void onItemClick (AdapterView av, View v, int arg2, long arg3){
 
-            // Get the device MAC address, the last 17 chars in the View
+            // Gets the MAC adress from the paried device
             String info = ((TextView) v).getText().toString();
             String address = info.substring(info.length() - 17);
 
-            // Make an intent to start next activity.
+            // Creates and change to a new activity
             Intent i = new Intent(DeviceList.this, ControlScreen.class);
-
-            //Change the activity.
             i.putExtra(EXTRA_ADDRESS, address); //this will be received at ControlScreen (class) Activity
             startActivity(i);
         }
     };
+
+    private void onScreenMessage(String message){
+
+        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
+
+    }
 
 }

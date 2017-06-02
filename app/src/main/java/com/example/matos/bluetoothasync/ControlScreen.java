@@ -184,51 +184,50 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
-    private class ConnectBT extends AsyncTask<Void, Void, Void> {
-        private boolean ConnectSuccess = true; //if it's here, it's almost connected
 
+    private class ConnectBT extends AsyncTask<Void, Void, Void> {
+        private boolean ConnectSuccess = true;
+
+        //Will create a dialog, which will be shown while the device is connecting
         @Override
-        protected void onPreExecute()
-        {
+        protected void onPreExecute() {
             System.out.println("ConnectBT on pre execute");
-            progress = ProgressDialog.show(ControlScreen.this, "Connecting...", "Please wait!!!");  //show a progress dialog
+            progress = ProgressDialog.show(ControlScreen.this, "Trying to connect to the bluetooth device.", "Please wait.");
         }
 
+        //Tries to connect to bluetooth device
         @Override
-        protected Void doInBackground(Void... devices) //while the progress dialog is shown, the connection is done in background
-        {
+        protected Void doInBackground(Void... devices){
+
             System.out.println("ConnectBT do in background");
-            try
-            {
-                if (btSocket == null || !isConnected)
-                {
-                    myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
-                    BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
-                    btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);//create a RFCOMM (SPP) connection
+            try{
+                if (btSocket == null || !isConnected){
+                    //Tries to connect
+                    myBluetooth = BluetoothAdapter.getDefaultAdapter(); //gets bluetooth adapter of the phone
+                    BluetoothDevice BTDevice = myBluetooth.getRemoteDevice(address); //connect to the adress of the device
+                    btSocket = BTDevice.createInsecureRfcommSocketToServiceRecord(myUUID); //create a RFCOMM connection
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-                    btSocket.connect();//start connection
-                    System.out.println("Connects via bluetooth !!!!!!!!!!!!!!!!!!!!!");
+                    btSocket.connect(); //start connection
+                    System.out.println("Connects via bluetooth!");
                 }
             }
-            catch (IOException e)
-            {
-                ConnectSuccess = false;//if the try failed, you can check the exception here
+            catch (IOException e){
+                ConnectSuccess = false;
             }
             return null;
         }
+
+        //Checks whether it went fine or not
         @Override
-        protected void onPostExecute(Void result) //after the doInBackground, it checks if everything went fine
-        {
+        protected void onPostExecute(Void result) {
             System.out.println("ConnectBT on post execute");
             super.onPostExecute(result);
 
-            if (!ConnectSuccess)
-            {
-                onScreenMessage("Connection Failed. Is it a SPP Bluetooth? Try again.");
+            if (!ConnectSuccess){
+                onScreenMessage("Connection Failed. Try again.");
                 finish();
             }
-            else
-            {
+            else{
                 onScreenMessage("Connected.");
                 isConnected = true;
             }
@@ -240,6 +239,8 @@ public class ControlScreen extends AppCompatActivity {
 
         @Override
         protected String doInBackground(Void... voids) {
+
+
 
             byte[] mmBuffer = new byte[1024];
             int numBytes = 0;
