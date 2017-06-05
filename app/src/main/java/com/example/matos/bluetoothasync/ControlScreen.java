@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -20,6 +21,8 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import org.json.*;
+
+import static android.R.attr.button;
 
 public class ControlScreen extends AppCompatActivity {
 
@@ -84,6 +87,13 @@ public class ControlScreen extends AppCompatActivity {
 
         });
 
+        audioOnOff.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton button, boolean OnOff){
+              command();
+
+            }
+
+        });
 
 
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -100,10 +110,14 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
-                    volumeLevel.setText(String.valueOf("Volume Level:" + seekBar.getProgress()));
+                    volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
                     try{
 
-                        btSocket.getOutputStream().write(String.valueOf(seekBar.getProgress()).getBytes());
+                        //JSONObject jo = new JSONObject("\"V\":\"1\"");
+                        //btSocket.getOutputStream().write(String.valueOf(seekBar.getProgress()).getBytes());
+
+                        String s = "{\"Volume\":\"3\", \"Error\":\"123\", \"Compression\":\"1\"}";
+                        btSocket.getOutputStream().write(s.getBytes());
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -120,15 +134,19 @@ public class ControlScreen extends AppCompatActivity {
         if (btSocket!=null) {
             try{
                 System.out.println("Request Update");
-                btSocket.getOutputStream().write("update".toString().getBytes());
-                String s = new receiveBT().execute().get();
+                btSocket.getOutputStream().write("Update".toString().getBytes());
+                String receivedMessage = new ReceiveBT().execute().get();
+                interpretMessage(receivedMessage);
             }
             catch (IOException e)
             {
                 onScreenMessage("Failed to send message");
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
@@ -149,12 +167,25 @@ public class ControlScreen extends AppCompatActivity {
         finish(); //return to the first layout
     }
 
-    private void command(String command){
+    private void command(){
 
         if (btSocket!=null) {
             try{
-                System.out.println("Command sent");
+                int onOff;
+                if(audioOnOff.isEnabled()){
+                    onOff = 1;
+                }else{
+                    onOff = 0;
+                }
+
+                int progress = volume.getProgress();
+
+                // Command is written in JSON syntax
+                String command = "{ \" Volume \" :" + progress + ", \" Compression \" :" + onOff + "}";
+
                 btSocket.getOutputStream().write(command.getBytes());
+
+
             }
             catch (IOException e)
             {
@@ -164,26 +195,47 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
-    private void interpretMessage(String receivedMessage){
+    private void interpretMessage(String receivedMessage) throws JSONException {
 
-        // TODO WHEN WE KNOW WHAT WE ARE GETTING
+        // Makes a JSON object
+        JSONObject jobject = new JSONObject(receivedMessage);
+
+        // Retrieves the volume level
+        int volume = (Integer.parseInt(jobject.getString("Volume")));
+
+        // Retrieves the error count
+        int count = (Integer.parseInt(jobject.getString("Error")));
+
+        // Retrieves the compression boolean
+        int compression = (Integer.parseInt(jobject.getString("Compression")));
+        boolean comp;
+        if(compression == 1){
+            comp = true;
+        }else{
+            comp = false;
+        }
+
+
+        updateValues(volume,count,comp);
 
     }
 
-    private void updateValues(String errorCount, boolean audioComp, String volumeLvl){
+    private void updateValues(int volumelvl, int errorCount, boolean compression){
 
         erCount.setText("Total error corrected: " + errorCount);
-        audioOnOff.setChecked(audioComp);
-        volumeLevel.setText("Volume Level: " + volumeLvl);
+        audioOnOff.setChecked(compression);
+        volumeLevel.setText("Volume Level: " + volumelvl);
+        volume.setProgress(volumelvl);
 
     }
-
 
     private void onScreenMessage(String message){
 
         Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
 
     }
+
+
 
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
@@ -236,7 +288,8 @@ public class ControlScreen extends AppCompatActivity {
         }
     }
 
-    private class receiveBT extends AsyncTask<Void, Void, String> {
+    private class ReceiveBT extends AsyncTask<Void, Void, String> {
+
 
         @Override
         protected String doInBackground(Void... voids) {
