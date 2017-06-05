@@ -17,10 +17,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
 
+import org.json.*;
+
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import org.json.*;
 
 import static android.R.attr.button;
 
