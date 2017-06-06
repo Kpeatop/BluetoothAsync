@@ -141,10 +141,8 @@ public class ControlScreen extends AppCompatActivity {
                 String receivedMessage = new ReceiveBT().execute().get();
                 interpretMessage(receivedMessage);
             }
-            catch (IOException e)
-            {
+            catch (IOException e){
                 onScreenMessage("Failed to send message");
-
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
@@ -152,20 +150,20 @@ public class ControlScreen extends AppCompatActivity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+
         }
 
     }
 
     private void disconnect() {
-        if (btSocket!=null)
-        {
-            try
-            {
+        if (btSocket!=null) {
+            try {
                 System.out.println("Disconnected");
                 btSocket.close(); //close connection
             }
-            catch (IOException e)
-            { onScreenMessage("Error");}
+            catch (IOException e) {
+                onScreenMessage("Error");
+            }
         }
         finish(); //return to the first layout
     }
@@ -190,10 +188,10 @@ public class ControlScreen extends AppCompatActivity {
 
 
             }
-            catch (IOException e)
-            {
+            catch (IOException e){
                 onScreenMessage("Failed to send command");
             }
+
         }
 
     }
@@ -202,22 +200,19 @@ public class ControlScreen extends AppCompatActivity {
 
         // Makes a JSON object
         JSONObject jobject = new JSONObject(receivedMessage);
-
         // Retrieves the volume level
         int volume = (Integer.parseInt(jobject.getString("Volume")));
-
         // Retrieves the error count
         int count = (Integer.parseInt(jobject.getString("Error")));
-
         // Retrieves the compression boolean
         int compression = (Integer.parseInt(jobject.getString("Compression")));
+
         boolean comp;
         if(compression == 1){
             comp = true;
         }else{
             comp = false;
         }
-
 
         updateValues(volume,count,comp);
 
