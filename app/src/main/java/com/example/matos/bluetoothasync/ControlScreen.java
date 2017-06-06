@@ -258,7 +258,7 @@ public class ControlScreen extends AppCompatActivity {
                 if (btSocket == null || !isConnected){
                     //Tries to connect
                     myBluetooth = BluetoothAdapter.getDefaultAdapter(); //gets bluetooth adapter of the phone
-                    BluetoothDevice BTDevice = myBluetooth.getRemoteDevice(address); //connect to the adress of the device
+                    BluetoothDevice BTDevice = myBluetooth.getRemoteDevice(address); //connect to the address of the device
                     btSocket = BTDevice.createInsecureRfcommSocketToServiceRecord(myUUID); //create a RFCOMM connection
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                     btSocket.connect(); //start connection
@@ -279,13 +279,13 @@ public class ControlScreen extends AppCompatActivity {
 
             if (!ConnectSuccess){
                 onScreenMessage("Connection Failed. Try again.");
-                finish();
+                finish(); // returns to devicelist
             }
             else{
                 onScreenMessage("Connected.");
                 isConnected = true;
             }
-            progress.dismiss();
+            progress.dismiss(); // dismisses the progress bar created in onPreExecute
         }
     }
 
@@ -294,8 +294,6 @@ public class ControlScreen extends AppCompatActivity {
 
         @Override
         protected String doInBackground(Void... voids) {
-
-
 
             byte[] mmBuffer = new byte[1024];
             int numBytes = 0;
@@ -309,8 +307,6 @@ public class ControlScreen extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            System.out.println(numBytes);
-
             byte[] result = new byte[numBytes];
 
             for(int i = 0; i < result.length; i++){
@@ -318,8 +314,6 @@ public class ControlScreen extends AppCompatActivity {
             }
 
             String receivedMessage = new String(result);
-
-            System.out.print("Result string is " + receivedMessage);
 
             return receivedMessage;
         }
