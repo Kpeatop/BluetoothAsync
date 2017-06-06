@@ -157,7 +157,7 @@ public class ControlScreen extends AppCompatActivity {
     }
 
     private void disconnect() {
-        if (btSocket!=null) //If the btSocket is busy
+        if (btSocket!=null)
         {
             try
             {
