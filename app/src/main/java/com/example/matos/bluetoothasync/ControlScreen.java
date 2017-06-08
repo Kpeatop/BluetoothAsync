@@ -113,19 +113,8 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
-                    volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
-                    try{
-
-                        //JSONObject jo = new JSONObject("\"V\":\"1\"");
-                        //btSocket.getOutputStream().write(String.valueOf(seekBar.getProgress()).getBytes());
-
-                        String s = "{\"Volume\":\"3\", \"Error\":\"123\", \"Compression\":\"1\"}";
-                        btSocket.getOutputStream().write(s.getBytes());
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
+                volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
+                command();
 
             }
         });
