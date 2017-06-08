@@ -23,10 +23,6 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-import static android.R.attr.button;
-
-//Helps?
-
 public class ControlScreen extends AppCompatActivity {
 
     Button btnUpdate, btnDis;
@@ -67,6 +63,10 @@ public class ControlScreen extends AppCompatActivity {
 
         volume.setProgress(0);
         volume.setMax(10);
+
+
+
+        erCount.setText("Total error corrected: " + 0);
 
         new ConnectBT().execute(); //Call the class to connect
 
@@ -276,7 +276,7 @@ public class ControlScreen extends AppCompatActivity {
 
             if (!ConnectSuccess){
                 onScreenMessage("Connection Failed. Try again.");
-                finish(); // returns to devicelist
+                //finish(); // returns to devicelist
             }
             else{
                 onScreenMessage("Connected.");

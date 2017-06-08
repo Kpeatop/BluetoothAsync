@@ -17,27 +17,29 @@ import android.bluetooth.BluetoothDevice;
 
 public class DeviceList extends AppCompatActivity {
 
+    // Declaring
     Button btnPaired;
     ListView pairedDeviceList;
+
     private BluetoothAdapter myBluetooth = null;
     private Set<BluetoothDevice> pairedDevices;
-    public static String EXTRA_ADDRESS = "device_address";
 
+    public static String EXTRA_ADDRESS = "device_address";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
+
         btnPaired = (Button)findViewById(R.id.find);
         pairedDeviceList = (ListView)findViewById(R.id.listView);
 
-        myBluetooth = BluetoothAdapter.getDefaultAdapter();  // Gets your bluetooth adapter
+        myBluetooth = BluetoothAdapter.getDefaultAdapter();  // Gets phone's bluetooth adapter
 
         if(myBluetooth == null){
 
             onScreenMessage("Bluetooth Device Not Available");
-            // Close app
-            finish();
+            finish();  // Will close the application
 
         } else{
             if (!myBluetooth.isEnabled()){
@@ -62,8 +64,7 @@ public class DeviceList extends AppCompatActivity {
         pairedDevices = myBluetooth.getBondedDevices();
         ArrayList pairedList = new ArrayList();
 
-        if (pairedDevices.size()>0){
-
+        if (pairedDevices.size() > 0){
             for(BluetoothDevice bt : pairedDevices) {
 
                 pairedList.add(bt.getName() + "\n" + bt.getAddress()); //Adds all the paired devices to a list, where the list elements will be clickable
