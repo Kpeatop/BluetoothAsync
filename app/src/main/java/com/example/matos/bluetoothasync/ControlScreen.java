@@ -281,25 +281,59 @@ public class ControlScreen extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... voids) {
 
-            byte[] mmBuffer = new byte[1024];
-            int numBytes = 0;
+//            byte[] mmBuffer = new byte[1024];
+//            int numBytes = 0;
+            String receivedMessage = "";
 
             try {
                 Thread.sleep(2000);
-                numBytes = btSocket.getInputStream().read(mmBuffer);
-            } catch (IOException e) {
-                e.printStackTrace();
+//                numBytes = btSocket.getInputStream().read(mmBuffer);
+//            } catch (IOException e) {
+//                e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            byte[] result = new byte[numBytes];
+            boolean done = false;
 
-            for(int i = 0; i < result.length; i++){
-                result[i] = mmBuffer[i];
+            while(!done){
+
+                byte[] mmBuffer = new byte[1024];
+                int numBytes = 0;
+                JSONObject jsonObject;
+
+                try {
+                    numBytes = btSocket.getInputStream().read(mmBuffer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                byte[] result = new byte[numBytes];
+
+                for(int i = 0; i < result.length; i++){
+                    result[i] = mmBuffer[i];
+                }
+
+                String s = new String(result);
+
+                receivedMessage += s;
+
+                try {
+                    jsonObject = new JSONObject(receivedMessage);
+                    done = true;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
             }
 
-            String receivedMessage = new String(result);
+//            byte[] result = new byte[numBytes];
+//
+//            for(int i = 0; i < result.length; i++){
+//                result[i] = mmBuffer[i];
+//            }
+//
+//            String receivedMessage = new String(result);
 
             return receivedMessage;
         }
