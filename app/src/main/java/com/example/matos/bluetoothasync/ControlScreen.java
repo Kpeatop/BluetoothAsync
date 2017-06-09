@@ -25,9 +25,9 @@ import java.util.concurrent.ExecutionException;
 public class ControlScreen extends AppCompatActivity {
 
     Button btnUpdate, btnDis;
-    SeekBar volume;
+    public SeekBar volume;
     TextView volumeLevel, erCount;
-    Switch audioOnOff;
+    public Switch audioOnOff;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
@@ -71,7 +71,7 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                request();   //Request update method is called
+                requestUpdate();   //Request update method is called
             }
         });
 
@@ -92,7 +92,6 @@ public class ControlScreen extends AppCompatActivity {
             }
 
         });
-
 
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -116,7 +115,6 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
-
     private void disconnect() {
         if (btSocket!=null) {
             try {
@@ -130,71 +128,24 @@ public class ControlScreen extends AppCompatActivity {
         finish(); //return to the first layout
     }
 
- /*   private void requestUpdate(){
-
-
-
-        if (btSocket!=null) {
-            try{
-                requestUpdate = true;
-                System.out.println("REQUEST UPDATE");
-                String request;
-                request = "{ \" TYPE \" : \"UPDATE\" }";
-
-                btSocket.getOutputStream().write(request.toString().getBytes());
-                System.out.println("REQUEST UPDATE SENT");
-                String receivedMessage = new ReceiveBT().execute().get();
-                interpretMessage(receivedMessage);
-            }
-            catch (IOException e){
-                onScreenMessage("Failed to send message");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }
-
-    }*/
-
-    private void request(){
+    private void requestUpdate(){
 
         new UpdateBT().execute();
         new ReceiveBT().execute();
 
-
     }
 
     private void command(){
-
-        if (btSocket!=null && !requestUpdate) {
-            try{
-                int onOff;
-                if(audioOnOff.isEnabled()){
-                    onOff = 1;
-                }else{
-                    onOff = 0;
-                }
-
-                int progress = volume.getProgress();
-
-                // Command is written in JSON syntax
-                String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + progress + ", \" Compression \" :" + onOff + "}";
-
-                btSocket.getOutputStream().write(command.getBytes());
-
-                // Waits 2 seconds before requesting update after commmand
-
-                request();
-
-            }
-            catch (IOException e){
-                onScreenMessage("Failed to send command");
-            }
+        int onOff;
+        if(audioOnOff.isEnabled()){
+            onOff = 1;
+        }else{
+            onOff = 0;
         }
+
+        new CommandBT().execute(onOff,volume.getProgress());
+
+
     }
 
     private void interpretMessage(String receivedMessage) throws JSONException {
@@ -215,7 +166,7 @@ public class ControlScreen extends AppCompatActivity {
             comp = false;
         }
 
-        System.out.println("Updating values with Volume "+volume+" Error count "+count+" Compression "+comp);
+        System.out.println("Updating values with Volume = "+volume+" Error count = "+count+" Compression = "+comp);
 
         updateValues(volume,count,comp);
 
@@ -234,7 +185,33 @@ public class ControlScreen extends AppCompatActivity {
     }
 
     private void onScreenMessage(String message){
-        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_SHORT).show();
+    }
+
+
+
+    private class CommandBT extends AsyncTask<Integer,Void,Void>{
+
+        @Override
+        protected Void doInBackground(Integer... integer) {
+
+            if (btSocket!=null && !requestUpdate) {
+                int onOff = integer[0];
+                int volume = integer[1];
+                try{
+
+                    // Command is written in JSON syntax
+                    String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + progress + ", \" Compression \" :" + onOff + "}";
+
+                    btSocket.getOutputStream().write(command.getBytes());
+                    requestUpdate();
+                }
+                catch (IOException e){
+                    onScreenMessage("Failed to send command");
+                }
+            }
+            return null;
+        }
     }
 
     private class UpdateBT extends AsyncTask<Void, Void, Void>{
