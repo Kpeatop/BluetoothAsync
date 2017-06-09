@@ -1,6 +1,5 @@
 package com.example.matos.bluetoothasync;
 
-import android.graphics.SweepGradient;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
@@ -34,6 +33,7 @@ public class ControlScreen extends AppCompatActivity {
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
     private boolean isConnected = false;
+    public boolean requestUpdate = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     @Override
@@ -71,7 +71,7 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
-                requestUpdate();   //Request update method is called
+                request();   //Request update method is called
             }
         });
 
@@ -116,10 +116,27 @@ public class ControlScreen extends AppCompatActivity {
 
     }
 
-    private void requestUpdate(){
+
+    private void disconnect() {
+        if (btSocket!=null) {
+            try {
+                System.out.println("Disconnected");
+                btSocket.close(); //close connection
+            }
+            catch (IOException e) {
+                onScreenMessage("Error");
+            }
+        }
+        finish(); //return to the first layout
+    }
+
+ /*   private void requestUpdate(){
+
+
 
         if (btSocket!=null) {
             try{
+                requestUpdate = true;
                 System.out.println("REQUEST UPDATE");
                 String request;
                 request = "{ \" TYPE \" : \"UPDATE\" }";
@@ -141,24 +158,19 @@ public class ControlScreen extends AppCompatActivity {
 
         }
 
-    }
+    }*/
 
-    private void disconnect() {
-        if (btSocket!=null) {
-            try {
-                System.out.println("Disconnected");
-                btSocket.close(); //close connection
-            }
-            catch (IOException e) {
-                onScreenMessage("Error");
-            }
-        }
-        finish(); //return to the first layout
+    private void request(){
+
+        new UpdateBT().execute();
+        new ReceiveBT().execute();
+
+
     }
 
     private void command(){
 
-        if (btSocket!=null) {
+        if (btSocket!=null && !requestUpdate) {
             try{
                 int onOff;
                 if(audioOnOff.isEnabled()){
@@ -175,14 +187,12 @@ public class ControlScreen extends AppCompatActivity {
                 btSocket.getOutputStream().write(command.getBytes());
 
                 // Waits 2 seconds before requesting update after commmand
-                Thread.sleep(2000);
-                requestUpdate();
+
+                request();
 
             }
             catch (IOException e){
                 onScreenMessage("Failed to send command");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -220,10 +230,45 @@ public class ControlScreen extends AppCompatActivity {
         onScreenMessage("Values has been updated");
         System.out.println("Values has been updated");
 
+        requestUpdate = false;
     }
 
     private void onScreenMessage(String message){
         Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
+    }
+
+    private class UpdateBT extends AsyncTask<Void, Void, Void>{
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            if (btSocket!=null) {
+                try{
+                    requestUpdate = true;
+                    System.out.println("REQUEST UPDATE");
+                    String request;
+                    request = "{ \" TYPE \" : \"UPDATE\" }";
+
+                    btSocket.getOutputStream().write(request.toString().getBytes());
+                    System.out.println("REQUEST UPDATE SENT");
+
+                }
+                catch (IOException e){
+                    onScreenMessage("Failed to send message");
+                }
+
+            }
+            return null;
+        }
+    }
+
+    private class CommandBt extends AsyncTask<Void, Void, Void>{
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            return null;
+        }
     }
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
@@ -258,7 +303,7 @@ public class ControlScreen extends AppCompatActivity {
             return null;
         }
 
-        //Checks if ConnecSucces is true or false
+        //Checks if ConnectSucces is true or false
         @Override
         protected void onPostExecute(Void result) {
             System.out.println("ConnectBT on post execute");
@@ -277,7 +322,6 @@ public class ControlScreen extends AppCompatActivity {
     }
 
     private class ReceiveBT extends AsyncTask<Void, Void, String> {
-
 
         @Override
         protected String doInBackground(Void... voids) {
@@ -319,8 +363,16 @@ public class ControlScreen extends AppCompatActivity {
             }
             return receivedMessage;
         }
-    }
+        @Override
+        protected void onPostExecute(String receivedMessage){
 
+            try {
+                interpretMessage(receivedMessage);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
 
 
