@@ -60,13 +60,8 @@ public class ControlScreen extends AppCompatActivity {
         //switch
         audioOnOff = (Switch)findViewById(R.id.audioOnOff);
 
-
         volume.setProgress(0);
         volume.setMax(10);
-
-
-
-        erCount.setText("Total error corrected: " + 0);
 
         new ConnectBT().execute(); //Call the class to connect
 
@@ -113,19 +108,8 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
-                    volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
-                    try{
-
-                        //JSONObject jo = new JSONObject("\"V\":\"1\"");
-                        //btSocket.getOutputStream().write(String.valueOf(seekBar.getProgress()).getBytes());
-
-                        String s = "{\"Volume\":\"3\", \"Error\":\"123\", \"Compression\":\"1\"}";
-                        btSocket.getOutputStream().write(s.getBytes());
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
+                volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
+                command();
 
             }
         });
@@ -136,8 +120,12 @@ public class ControlScreen extends AppCompatActivity {
 
         if (btSocket!=null) {
             try{
-                System.out.println("Request Update");
-                btSocket.getOutputStream().write("Update".toString().getBytes());
+                System.out.println("REQUEST UPDATE");
+                String request;
+                request = "{ \" TYPE \" : \"UPDATE\" }";
+
+                btSocket.getOutputStream().write(request.toString().getBytes());
+                System.out.println("REQUEST UPDATE SENT");
                 String receivedMessage = new ReceiveBT().execute().get();
                 interpretMessage(receivedMessage);
             }
@@ -182,18 +170,21 @@ public class ControlScreen extends AppCompatActivity {
                 int progress = volume.getProgress();
 
                 // Command is written in JSON syntax
-                String command = "{ \" Volume \" :" + progress + ", \" Compression \" :" + onOff + "}";
+                String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + progress + ", \" Compression \" :" + onOff + "}";
 
                 btSocket.getOutputStream().write(command.getBytes());
 
+                // Waits 2 seconds before requesting update after commmand
+                Thread.sleep(2000);
+                requestUpdate();
 
             }
             catch (IOException e){
                 onScreenMessage("Failed to send command");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-
         }
-
     }
 
     private void interpretMessage(String receivedMessage) throws JSONException {
@@ -214,6 +205,8 @@ public class ControlScreen extends AppCompatActivity {
             comp = false;
         }
 
+        System.out.println("Updating values with Volume "+volume+" Error count "+count+" Compression "+comp);
+
         updateValues(volume,count,comp);
 
     }
@@ -224,17 +217,14 @@ public class ControlScreen extends AppCompatActivity {
         audioOnOff.setChecked(compression);
         volumeLevel.setText("Volume Level: " + volumelvl);
         volume.setProgress(volumelvl);
+        onScreenMessage("Values has been updated");
+        System.out.println("Values has been updated");
 
     }
 
     private void onScreenMessage(String message){
-
         Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
-
     }
-
-
-
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
@@ -268,7 +258,7 @@ public class ControlScreen extends AppCompatActivity {
             return null;
         }
 
-        //Checks whether it went fine or not
+        //Checks if ConnecSucces is true or false
         @Override
         protected void onPostExecute(Void result) {
             System.out.println("ConnectBT on post execute");
@@ -276,7 +266,7 @@ public class ControlScreen extends AppCompatActivity {
 
             if (!ConnectSuccess){
                 onScreenMessage("Connection Failed. Try again.");
-                //finish(); // returns to devicelist
+                finish(); // returns to devicelist
             }
             else{
                 onScreenMessage("Connected.");
@@ -292,26 +282,41 @@ public class ControlScreen extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... voids) {
 
-            byte[] mmBuffer = new byte[1024];
-            int numBytes = 0;
+            String receivedMessage = "";
 
-            try {
-                Thread.sleep(2000);
-                numBytes = btSocket.getInputStream().read(mmBuffer);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            boolean done = false;
+
+            while(!done){
+
+                byte[] mmBuffer = new byte[1024];
+                int numBytes = 0;
+                JSONObject jsonObject;
+
+                try {
+                    Thread.sleep(2000);
+                    numBytes = btSocket.getInputStream().read(mmBuffer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                byte[] result = new byte[numBytes];
+
+                for(int i = 0; i < result.length; i++){
+                    result[i] = mmBuffer[i];
+                }
+
+                String s = new String(result);
+                receivedMessage += s;
+                System.out.println(receivedMessage);
+
+                try {
+                    jsonObject = new JSONObject(receivedMessage);
+                    done = true;
+                } catch (JSONException e) {
+                }
             }
-
-            byte[] result = new byte[numBytes];
-
-            for(int i = 0; i < result.length; i++){
-                result[i] = mmBuffer[i];
-            }
-
-            String receivedMessage = new String(result);
-
             return receivedMessage;
         }
     }
