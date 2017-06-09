@@ -262,15 +262,6 @@ public class ControlScreen extends AppCompatActivity {
         }
     }
 
-    private class CommandBt extends AsyncTask<Void, Void, Void>{
-
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            return null;
-        }
-    }
-
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
 
