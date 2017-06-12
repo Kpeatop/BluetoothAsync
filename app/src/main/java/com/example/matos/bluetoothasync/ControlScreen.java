@@ -145,7 +145,6 @@ public class ControlScreen extends AppCompatActivity {
 
         new CommandBT().execute(onOff,volume.getProgress());
 
-
     }
 
     private void interpretMessage(String receivedMessage) throws JSONException {
