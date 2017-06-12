@@ -294,17 +294,19 @@ public class ControlScreen extends AppCompatActivity {
         protected String doInBackground(Void... voids) {
 
             String receivedMessage = "";
-
             boolean done = false;
-
+            //While loop that runs until a complete JSON object has been created
             while(!done){
 
+                System.out.println("Trying to complete JSON Object");
                 byte[] mmBuffer = new byte[1024];
                 int numBytes = 0;
                 JSONObject jsonObject;
 
                 try {
-                    Thread.sleep(2000);
+                    // Creates a delay of 200 ms
+                    Thread.sleep(200);
+                    // Reads from inputstream and puts data in to mmBuffer. Numbytes has the number of bytes.
                     numBytes = btSocket.getInputStream().read(mmBuffer);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -313,16 +315,18 @@ public class ControlScreen extends AppCompatActivity {
                 }
 
                 byte[] result = new byte[numBytes];
-
+                // Result array is created from number of bytes and filled with the data from mmBuffer
                 for(int i = 0; i < result.length; i++){
                     result[i] = mmBuffer[i];
                 }
 
-                String s = new String(result);
-                receivedMessage += s;
+                // Creates a string temp that is concatonated with the received message.
+                String temp = new String(result);
+                receivedMessage += temp;
                 System.out.println(receivedMessage);
 
                 try {
+                    // Tries to create a JSON object. If success the loop will terminate, otherwise it will continue until possible
                     jsonObject = new JSONObject(receivedMessage);
                     done = true;
                 } catch (JSONException e) {
@@ -333,6 +337,7 @@ public class ControlScreen extends AppCompatActivity {
         @Override
         protected void onPostExecute(String receivedMessage){
 
+            //Calls the interpretMessage with the receivedMessage from the doInBackground
             try {
                 interpretMessage(receivedMessage);
             } catch (JSONException e) {
@@ -340,6 +345,7 @@ public class ControlScreen extends AppCompatActivity {
             }
         }
     }
+
 }
 
 
