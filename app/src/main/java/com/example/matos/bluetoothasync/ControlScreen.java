@@ -1,5 +1,7 @@
 package com.example.matos.bluetoothasync;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.bluetooth.BluetoothSocket;
@@ -111,10 +113,24 @@ public class ControlScreen extends AppCompatActivity {
             }
         });
 
+        SharedPreferences sharedPref = getSharedPreferences("MyPref", Context.MODE_PRIVATE);
+        int errors = sharedPref.getInt("Error", 0);
+        int volume = sharedPref.getInt("Volume", 0);
+        boolean compression = sharedPref.getBoolean("Compression", false);
+
+        updateValues(volume, errors, compression);
+
     }
 
     private void disconnect() {
         if (btSocket!=null) {
+
+        SharedPreferences.Editor editor = getSharedPreferences("MyPref", Context.MODE_PRIVATE).edit();
+        editor.putInt("Error", Integer.parseInt(erCount.getText().toString()));
+        editor.putInt("Volume", volume.getProgress());
+        editor.putBoolean("Compression", audioOnOff.isEnabled());
+        editor.apply();
+
             try {
                 System.out.println("Disconnected");
                 btSocket.close(); //close connection
