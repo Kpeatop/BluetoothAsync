@@ -15,12 +15,9 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
-
 import org.json.*;
-
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 public class ControlScreen extends AppCompatActivity {
 
@@ -64,6 +61,7 @@ public class ControlScreen extends AppCompatActivity {
         volume.setMax(10);
 
         new ConnectBT().execute(); //Call the class to connect
+        new autoUpdate().execute(); // Starts the auto update
 
         //commands to be sent via bluetooth
 
@@ -179,7 +177,6 @@ public class ControlScreen extends AppCompatActivity {
         volume.setProgress(volumelvl);
         onScreenMessage("Values has been updated");
         System.out.println("Values has been updated");
-
         requestUpdate = false;
     }
 
@@ -200,7 +197,7 @@ public class ControlScreen extends AppCompatActivity {
                 try{
 
                     // Command is written in JSON syntax
-                    String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + progress + ", \" Compression \" :" + onOff + "}";
+                    String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + volume + ", \" Compression \" :" + onOff + "}";
 
                     btSocket.getOutputStream().write(command.getBytes());
                     requestUpdate();
@@ -258,7 +255,7 @@ public class ControlScreen extends AppCompatActivity {
                     //Tries to connect
                     myBluetooth = BluetoothAdapter.getDefaultAdapter(); //gets bluetooth adapter of the phone
                     BluetoothDevice BTDevice = myBluetooth.getRemoteDevice(address); //connect to the address of the device
-                    btSocket = BTDevice.createInsecureRfcommSocketToServiceRecord(myUUID); //create a RFCOMM connection
+                    btSocket = BTDevice.createInsecureRfcommSocketToServiceRecord(myUUID); //creates a RFCOMM connection
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                     btSocket.connect(); //start connection
                     System.out.println("Connects via bluetooth!");
@@ -346,6 +343,28 @@ public class ControlScreen extends AppCompatActivity {
         }
     }
 
-}
+    private class autoUpdate extends AsyncTask<Void, Void, Void>{
 
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Boolean running = true;
+
+            while(running){
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if(!isConnected){
+                    break;
+                } else {
+                    requestUpdate();
+                    onScreenMessage("Auto update sent");
+                }
+            }
+            return null;
+        }
+    }
+
+}
 
