@@ -34,6 +34,7 @@ public class ControlScreen extends AppCompatActivity {
     private boolean isConnected = false;
     public boolean requestUpdate = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private boolean isReceiving = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,19 +144,27 @@ public class ControlScreen extends AppCompatActivity {
     }
 
     private void requestUpdate(){
-        int onOff;
-        if(audioOnOff.isEnabled()){
-            onOff = 1;
-        }else{
-            onOff = 0;
-        }
 
-        new UpdateBT().execute(onOff,volume.getProgress());
-        new ReceiveBT().execute();
+        if(!isReceiving){
+            isReceiving = true;
+
+            int onOff;
+            if(audioOnOff.isEnabled()){
+                onOff = 1;
+            }else{
+                onOff = 0;
+            }
+
+            new UpdateBT().execute(onOff,volume.getProgress());
+            new ReceiveBT().execute();
+        } else {
+            new waitToUpdate().execute();
+        }
 
     }
 
     private void command(){
+
         int onOff;
         if(audioOnOff.isEnabled()){
             onOff = 1;
@@ -355,6 +364,7 @@ public class ControlScreen extends AppCompatActivity {
                 } catch (JSONException e) {
                 }
             }
+            isReceiving = false;
             return receivedMessage;
         }
         @Override
@@ -388,6 +398,23 @@ public class ControlScreen extends AppCompatActivity {
                     onScreenMessage("Auto update sent");
                 }
             }
+            return null;
+        }
+    }
+
+    private class waitToUpdate extends AsyncTask<Void, Void, Void>{
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            while(isReceiving){
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            requestUpdate();
             return null;
         }
     }
