@@ -143,8 +143,14 @@ public class ControlScreen extends AppCompatActivity {
     }
 
     private void requestUpdate(){
+        int onOff;
+        if(audioOnOff.isEnabled()){
+            onOff = 1;
+        }else{
+            onOff = 0;
+        }
 
-        new UpdateBT().execute();
+        new UpdateBT().execute(onOff,volume.getProgress());
         new ReceiveBT().execute();
 
     }
@@ -226,17 +232,21 @@ public class ControlScreen extends AppCompatActivity {
         }
     }
 
-    private class UpdateBT extends AsyncTask<Void, Void, Void>{
+    private class UpdateBT extends AsyncTask<Integer, Void, Void>{
 
         @Override
-        protected Void doInBackground(Void... voids) {
+        protected Void doInBackground(Integer... integers) {
+
+            int volume = integers[0];
+            int onOff = integers[1];
+
 
             if (btSocket!=null) {
                 try{
                     requestUpdate = true;
                     System.out.println("REQUEST UPDATE");
                     String request;
-                    request = "{ \" TYPE \" : \"UPDATE\" }";
+                    request = "{ \" TYPE \" : \"UPDATE\" , \" Volume \" :" + volume + ", \" Compression \" :" + onOff + "}";
 
                     btSocket.getOutputStream().write(request.toString().getBytes());
                     System.out.println("REQUEST UPDATE SENT");
@@ -371,7 +381,7 @@ public class ControlScreen extends AppCompatActivity {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if(!isConnected){
+                if(btSocket==null){
                     break;
                 } else {
                     requestUpdate();
