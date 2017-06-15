@@ -65,7 +65,7 @@ public class ControlScreen extends AppCompatActivity {
 
         new ConnectBT().execute(); //Call the class to connect
         new autoUpdate().execute(); // Starts the auto update
-        new ifConnectionLost().execute(); // checks connection, will return to device list if connection is lost
+       // new ifConnectionLost().execute(); // checks connection, will return to device list if connection is lost
 
         //commands to be sent via bluetooth
 
@@ -74,6 +74,7 @@ public class ControlScreen extends AppCompatActivity {
             public void onClick(View v)
             {
                 requestUpdate();   //Request update method is called
+                System.out.println("Request button has been pushed");
             }
         });
 
@@ -146,7 +147,9 @@ public class ControlScreen extends AppCompatActivity {
 
     private void requestUpdate(){
 
+        System.out.println(isReceiving);
         if(!isReceiving){
+            System.out.println("inside if statement");
             isReceiving = true;
 
             int onOff;
@@ -158,8 +161,11 @@ public class ControlScreen extends AppCompatActivity {
 
             new UpdateBT().execute(onOff,volume.getProgress());
             new ReceiveBT().execute();
+            System.out.println("After new statements");
         } else {
+            System.out.println("in else");
             new waitToUpdate().execute();
+            System.out.println("Wait to update");
         }
 
     }
@@ -222,6 +228,7 @@ public class ControlScreen extends AppCompatActivity {
         @Override
         protected Void doInBackground(Integer... integer) {
 
+
             if (btSocket!=null && !requestUpdate) {
                 int onOff = integer[0];
                 int volume = integer[1];
@@ -231,7 +238,9 @@ public class ControlScreen extends AppCompatActivity {
                     String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + volume + ", \" Compression \" :" + onOff + "}";
 
                     btSocket.getOutputStream().write(command.getBytes());
-                    requestUpdate();
+
+
+
                 }
                 catch (IOException e){
                     onScreenMessage("Failed to send command");
@@ -239,6 +248,12 @@ public class ControlScreen extends AppCompatActivity {
             }
             return null;
         }
+        @Override
+        protected void onPostExecute(Void result) {
+            requestUpdate();
+        }
+
+
     }
 
     private class UpdateBT extends AsyncTask<Integer, Void, Void>{
@@ -246,6 +261,7 @@ public class ControlScreen extends AppCompatActivity {
         @Override
         protected Void doInBackground(Integer... integers) {
 
+            System.out.println("inside updateBT ASYNC");
             int volume = integers[0];
             int onOff = integers[1];
 
@@ -322,8 +338,10 @@ public class ControlScreen extends AppCompatActivity {
 
     private class ReceiveBT extends AsyncTask<Void, Void, String> {
 
+
         @Override
         protected String doInBackground(Void... voids) {
+            System.out.println("inside receivebt");
 
             String receivedMessage = "";
             boolean done = false;
@@ -364,12 +382,14 @@ public class ControlScreen extends AppCompatActivity {
                 } catch (JSONException e) {
                 }
             }
-            isReceiving = false;
+
+            System.out.println(isReceiving);
             return receivedMessage;
         }
         @Override
         protected void onPostExecute(String receivedMessage){
 
+            isReceiving = false;
             //Calls the interpretMessage with the receivedMessage from the doInBackground
             try {
                 interpretMessage(receivedMessage);
@@ -383,22 +403,25 @@ public class ControlScreen extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            Boolean running = true;
 
-            while(running){
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if(btSocket==null){
-                    break;
-                } else {
-                    requestUpdate();
-                    onScreenMessage("Auto update sent");
-                }
+            try {
+                Thread.sleep(50000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            if(btSocket==null){
+                finish();
+            } else {
+                requestUpdate();
+                onScreenMessage("Auto update sent");
+                new autoUpdate().execute();
+            }
         }
     }
 
@@ -407,23 +430,36 @@ public class ControlScreen extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... voids) {
 
-            while(isReceiving){
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            System.out.println("Inside while loop in wait to update");
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            requestUpdate();
+
             return null;
         }
+        @Override
+        protected void onPostExecute(Void result) {
+
+
+            if(isReceiving){
+                new waitToUpdate().execute();
+            } else {
+                requestUpdate();
+            }
+
+        }
+
     }
 
-    private class ifConnectionLost extends AsyncTask<Object, Object, Void> {
+    private class ifConnectionLost extends AsyncTask<Void, Void, Void> {
 
         @Override
-        protected Void doInBackground(Object... voids) {
+
+        protected Void doInBackground(Void... voids) {
             boolean isConnected = true;
+            System.out.println(btSocket+"Det er btsocket");
             while(isConnected){
                 try {
                     Thread.sleep(3000);
@@ -431,11 +467,19 @@ public class ControlScreen extends AppCompatActivity {
                     e.printStackTrace();
                 }
                 if(btSocket == null){
-                    finish();
-                    onScreenMessage("Connection has been lost");
+                    isConnected = false;
+
+
                 }
             }
             return null;
+        }
+
+        protected void onPostExecute(Void result) {
+
+            onScreenMessage("Connection has been lost");
+            finish();
+
         }
 
     }
