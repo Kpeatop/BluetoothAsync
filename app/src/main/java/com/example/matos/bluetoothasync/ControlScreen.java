@@ -65,6 +65,7 @@ public class ControlScreen extends AppCompatActivity {
 
         new ConnectBT().execute(); //Call the class to connect
         new autoUpdate().execute(); // Starts the auto update
+        new ifConnectionLost().execute(); // checks connection, will return to device list if connection is lost
 
         //commands to be sent via bluetooth
 
@@ -214,7 +215,6 @@ public class ControlScreen extends AppCompatActivity {
     private void onScreenMessage(String message){
         Toast.makeText(getApplicationContext(),message,Toast.LENGTH_SHORT).show();
     }
-
 
 
     private class CommandBT extends AsyncTask<Integer,Void,Void>{
@@ -417,6 +417,27 @@ public class ControlScreen extends AppCompatActivity {
             requestUpdate();
             return null;
         }
+    }
+
+    private class ifConnectionLost extends AsyncTask<Object, Object, Void> {
+
+        @Override
+        protected Void doInBackground(Object... voids) {
+            boolean isConnected = true;
+            while(isConnected){
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if(btSocket == null){
+                    finish();
+                    onScreenMessage("Connection has been lost");
+                }
+            }
+            return null;
+        }
+
     }
 
 }
