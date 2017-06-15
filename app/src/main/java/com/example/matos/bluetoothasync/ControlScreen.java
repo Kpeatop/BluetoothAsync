@@ -36,6 +36,8 @@ public class ControlScreen extends AppCompatActivity {
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private boolean isReceiving = false;
 
+    AsyncTask AU;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +66,8 @@ public class ControlScreen extends AppCompatActivity {
         volume.setMax(10);
 
         new ConnectBT().execute(); //Call the class to connect
-        new autoUpdate().execute(); // Starts the auto update
+        AU = new autoUpdate().execute(); // Starts the auto update
+        //AU.execute();
        // new ifConnectionLost().execute(); // checks connection, will return to device list if connection is lost
 
         //commands to be sent via bluetooth
@@ -73,7 +76,9 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
+                AU.cancel(false);
                 requestUpdate();   //Request update method is called
+                AU = new autoUpdate().execute();
                 System.out.println("Request button has been pushed");
             }
         });
@@ -129,7 +134,7 @@ public class ControlScreen extends AppCompatActivity {
         if (btSocket!=null) {
 
         SharedPreferences.Editor editor = getSharedPreferences("MyPref", Context.MODE_PRIVATE).edit();
-        editor.putInt("Error", Integer.parseInt(erCount.getText().toString()));
+        //editor.putInt("Error", Integer.parseInt(erCount.getText().toString()));
         editor.putInt("Volume", volume.getProgress());
         editor.putBoolean("Compression", audioOnOff.isEnabled());
         editor.apply();
@@ -405,7 +410,7 @@ public class ControlScreen extends AppCompatActivity {
         protected Void doInBackground(Void... voids) {
 
             try {
-                Thread.sleep(50000);
+                Thread.sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
