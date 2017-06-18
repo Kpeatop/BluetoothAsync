@@ -23,21 +23,21 @@ import java.util.UUID;
 
 public class ControlScreen extends AppCompatActivity {
 
-    Button btnUpdate, btnDis;
-    public SeekBar volume;
-    TextView volumeLevel, erCount;
-    public Switch audioOnOff;
-    String address = null;
+    private Button btnUpdate, btnDis;
+    private SeekBar volume;
+    private TextView volumeLevel, erCount;
+    private Switch audioOnOff;
+    private String address = null;
     private ProgressDialog progress;
-    BluetoothAdapter myBluetooth = null;
-    BluetoothSocket btSocket = null;
-    private boolean isConnected = false;
-    public boolean requestUpdate = false;
+    private BluetoothAdapter myBluetooth = null;
+    private BluetoothSocket btSocket = null;
+    private boolean isConnected,isReceiving, userChange;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private boolean isReceiving = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         Intent newint = getIntent();
@@ -62,11 +62,16 @@ public class ControlScreen extends AppCompatActivity {
         //switch
         audioOnOff = (Switch)findViewById(R.id.audioOnOff);
 
+        //Booleans
+        isReceiving = false;
+        isConnected = false;
+        userChange = false;
+
+        //Async task that runs with the creation of the ControlScreen
+
         new ConnectBT().execute(); //Call the class to connect
+
         new autoUpdate().execute(); // Starts the auto update
-
-
-       // new ifConnectionLost().execute(); // checks connection, will return to device list if connection is lost
 
         //commands to be sent via bluetooth
 
@@ -75,10 +80,11 @@ public class ControlScreen extends AppCompatActivity {
             public void onClick(View v)
             {
 
-                manuelRequestUpdate();   //Request update method is called
+                requestUpdate();   //Request update method is called
 
             }
         });
+
 
         btnDis.setOnClickListener(new View.OnClickListener()
         {
@@ -90,19 +96,19 @@ public class ControlScreen extends AppCompatActivity {
 
         });
 
-        audioOnOff.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            public void onCheckedChanged(CompoundButton button, boolean OnOff){
-
-              command();
-
+        audioOnOff.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                 command();
             }
-
-        });
+        }
+        );
 
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+                volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
+                userChange = fromUser;
             }
 
             @Override
@@ -113,8 +119,11 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
-                volumeLevel.setText(String.valueOf("Volume Level: " + seekBar.getProgress()));
-                command();
+                if(userChange){
+                    command();
+                    userChange = false;
+                }
+
 
             }
         });
@@ -145,39 +154,19 @@ public class ControlScreen extends AppCompatActivity {
                 onScreenMessage("Error");
             }
         }
+        onScreenMessage("Disconnected");
         finish(); //return to the first layout
     }
 
     private void requestUpdate(){
         System.out.println("In REQUEST");
-        System.out.println(isReceiving);
-
         if(!isReceiving){
             isReceiving = true;
-
             UpdateBT();
-            new ReceiveBT().execute();
+            new ReceiveBT().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         } else {
             new waitToUpdate().execute();
         }
-
-    }
-
-    private void manuelRequestUpdate(){
-        System.out.println("In Manuel request");
-        System.out.println(isReceiving);
-
-        if(!isReceiving){
-
-            isReceiving = true;
-            UpdateBT();
-            new mReceiveBT().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        } else {
-            new waitToUpdate().execute();
-        }
-
-
-
     }
 
     private void UpdateBT(){
@@ -192,7 +181,6 @@ public class ControlScreen extends AppCompatActivity {
             }
 
             try{
-                requestUpdate = true;
                 String request;
                 request = "{ \" TYPE \" : \"UPDATE\" , \" Volume \" :" + volume.getProgress() + ", \" Compression \" :" + onOff + "}";
 
@@ -201,14 +189,15 @@ public class ControlScreen extends AppCompatActivity {
 
             }
             catch (IOException e){
+                disconnect();
                 onScreenMessage("Failed to send message");
             }
         }
-
     }
 
     private void command(){
 
+        System.out.println("in command");
         int onOff;
         if(audioOnOff.isEnabled()){
             onOff = 1;
@@ -216,8 +205,17 @@ public class ControlScreen extends AppCompatActivity {
             onOff = 0;
         }
 
-        new CommandBT().execute(onOff,volume.getProgress());
+        try{
+            // Command is written in JSON syntax
+            String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + volume.getProgress() + ", \" Compression \" :" + onOff + "}";
 
+            btSocket.getOutputStream().write(command.getBytes());
+            System.out.println(command);
+        }
+        catch (IOException e){
+            onScreenMessage("Failed to send command");
+        }
+        requestUpdate();
     }
 
     private void interpretMessage(String receivedMessage) throws JSONException {
@@ -252,46 +250,11 @@ public class ControlScreen extends AppCompatActivity {
         volume.setProgress(volumelvl);
         onScreenMessage("Values has been updated");
         System.out.println("Values has been updated");
-        requestUpdate = false;
     }
 
     private void onScreenMessage(String message){
         Toast.makeText(getApplicationContext(),message,Toast.LENGTH_SHORT).show();
     }
-
-    private class CommandBT extends AsyncTask<Integer,Void,Void>{
-
-        @Override
-        protected Void doInBackground(Integer... integer) {
-
-
-            if (btSocket!=null && !requestUpdate) {
-                int onOff = integer[0];
-                int volume = integer[1];
-                try{
-
-                    // Command is written in JSON syntax
-                    String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + volume + ", \" Compression \" :" + onOff + "}";
-
-                    btSocket.getOutputStream().write(command.getBytes());
-
-
-
-                }
-                catch (IOException e){
-                    onScreenMessage("Failed to send command");
-                }
-            }
-            return null;
-        }
-        @Override
-        protected void onPostExecute(Void result) {
-            requestUpdate();
-        }
-
-
-    }
-
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
@@ -367,6 +330,7 @@ public class ControlScreen extends AppCompatActivity {
                     numBytes = btSocket.getInputStream().read(mmBuffer);
                 } catch (IOException e) {
                     e.printStackTrace();
+                    disconnect();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -404,72 +368,8 @@ public class ControlScreen extends AppCompatActivity {
             }
         }
     }
-
-    private class mReceiveBT extends AsyncTask<Void, Void, String> {
-
-
-        @Override
-        protected String doInBackground(Void... voids) {
-            System.out.println("inside manuel receivebt");
-
-            String receivedMessage = "";
-            boolean done = false;
-            //While loop that runs until a complete JSON object has been created
-            while(!done){
-
-                System.out.println("Trying to complete JSON Object");
-                byte[] mmBuffer = new byte[1024];
-                int numBytes = 0;
-                JSONObject jsonObject;
-
-                try {
-                    // Creates a delay of 200 ms
-                    Thread.sleep(200);
-                    // Reads from inputstream and puts data in to mmBuffer. Numbytes has the number of bytes.
-                    numBytes = btSocket.getInputStream().read(mmBuffer);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                byte[] result = new byte[numBytes];
-                // Result array is created from number of bytes and filled with the data from mmBuffer
-                for(int i = 0; i < result.length; i++){
-                    result[i] = mmBuffer[i];
-                }
-
-                // Creates a string temp that is concatonated with the received message.
-                String temp = new String(result);
-                receivedMessage += temp;
-                System.out.println(receivedMessage);
-
-                try {
-                    // Tries to create a JSON object. If success the loop will terminate, otherwise it will continue until possible
-                    jsonObject = new JSONObject(receivedMessage);
-                    done = true;
-                } catch (JSONException e) {
-                }
-            }
-
-            return receivedMessage;
-        }
-        @Override
-        protected void onPostExecute(String receivedMessage){
-
-            isReceiving = false;
-            //Calls the interpretMessage with the receivedMessage from the doInBackground
-            try {
-                interpretMessage(receivedMessage);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
 
     private class autoUpdate extends AsyncTask<Void, Void, Void>{
-
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -514,37 +414,6 @@ public class ControlScreen extends AppCompatActivity {
             } else {
                 requestUpdate();
             }
-
-        }
-
-    }
-
-    private class ifConnectionLost extends AsyncTask<Void, Void, Void> {
-
-        @Override
-
-        protected Void doInBackground(Void... voids) {
-            boolean isConnected = true;
-            System.out.println(btSocket+"Det er btsocket");
-            while(isConnected){
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if(btSocket == null){
-                    isConnected = false;
-
-
-                }
-            }
-            return null;
-        }
-
-        protected void onPostExecute(Void result) {
-
-            onScreenMessage("Connection has been lost");
-            finish();
 
         }
 
