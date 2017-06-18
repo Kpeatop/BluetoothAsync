@@ -182,9 +182,8 @@ public class ControlScreen extends AppCompatActivity {
 
             try{
                 String request;
-                request = "{ \" TYPE \" : \"UPDATE\" , \" Volume \" :" + volume.getProgress() + ", \" Compression \" :" + onOff + "}";
+                request = "{ \"TYPE\" : \"UPDATE\" , \"Volume\" :" + volume.getProgress() + ", \"Compression\" :" + onOff  + "}";
 
-                System.out.println("update bt");
                 btSocket.getOutputStream().write(request.toString().getBytes());
 
             }
@@ -207,15 +206,16 @@ public class ControlScreen extends AppCompatActivity {
 
         try{
             // Command is written in JSON syntax
-            String command = "{ \" TYPE \" : \"COMMAND\" , \" Volume \" :" + volume.getProgress() + ", \" Compression \" :" + onOff + "}";
+            String command = "{ \"TYPE\" : \"COMMAND\" , \"Volume\" :" + volume.getProgress() + ", \"Compression\" :" + onOff + "}";
+            System.out.println("This is the command: " + command);
 
             btSocket.getOutputStream().write(command.getBytes());
-            System.out.println(command);
+
         }
         catch (IOException e){
             onScreenMessage("Failed to send command");
         }
-        requestUpdate();
+        //requestUpdate();
     }
 
     private void interpretMessage(String receivedMessage) throws JSONException {
