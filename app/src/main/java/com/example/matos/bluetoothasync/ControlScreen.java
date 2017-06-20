@@ -17,7 +17,9 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.AsyncTask;
+
 import org.json.*;
+
 import java.io.IOException;
 import java.util.UUID;
 
@@ -31,7 +33,7 @@ public class ControlScreen extends AppCompatActivity {
     private ProgressDialog progress;
     private BluetoothAdapter myBluetooth = null;
     private BluetoothSocket btSocket = null;
-    private boolean isConnected,isReceiving, userChange;
+    private boolean isConnected, isReceiving, userChange;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
 
@@ -47,20 +49,20 @@ public class ControlScreen extends AppCompatActivity {
         setContentView(R.layout.activity_control_screen);
 
         //Buttons
-        btnUpdate = (Button)findViewById(R.id.btnUpdate);
-        btnDis = (Button)findViewById(R.id.btnDis);
+        btnUpdate = (Button) findViewById(R.id.btnUpdate);
+        btnDis = (Button) findViewById(R.id.btnDis);
 
         // Seekbar
-        volume = (SeekBar)findViewById(R.id.volume);
+        volume = (SeekBar) findViewById(R.id.volume);
         volume.setProgress(0);
         volume.setMax(10);
 
         //TextView
-        volumeLevel = (TextView)findViewById(R.id.level);
-        erCount = (TextView)findViewById(R.id.erCount);
+        volumeLevel = (TextView) findViewById(R.id.level);
+        erCount = (TextView) findViewById(R.id.erCount);
 
         //switch
-        audioOnOff = (Switch)findViewById(R.id.audioOnOff);
+        audioOnOff = (Switch) findViewById(R.id.audioOnOff);
 
         //Booleans
         isReceiving = false;
@@ -70,38 +72,35 @@ public class ControlScreen extends AppCompatActivity {
         //Async task that runs with the creation of the ControlScreen
 
         new ConnectBT().execute(); //Call the class to connect
-
         new autoUpdate().execute(); // Starts the auto update
 
         //commands to be sent via bluetooth
 
         btnUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
-
+            public void onClick(View v) {
+                System.out.println("Request button has been pushed");
                 requestUpdate();   //Request update method is called
 
             }
         });
 
 
-        btnDis.setOnClickListener(new View.OnClickListener()
-        {
+        btnDis.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 disconnect(); //close connection and returns to first screen
+                System.out.println("Disconnect button has been pushed");
             }
 
         });
 
-        audioOnOff.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                 command();
-            }
-        }
+        audioOnOff.setOnClickListener(new View.OnClickListener() {
+                                          @Override
+                                          public void onClick(View view) {
+                                              command();
+                                          }
+                                      }
         );
 
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -119,7 +118,7 @@ public class ControlScreen extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
-                if(userChange){
+                if (userChange) {
                     command();
                     userChange = false;
                 }
@@ -128,94 +127,65 @@ public class ControlScreen extends AppCompatActivity {
             }
         });
 
-        //SharedPreferences sharedPref = getSharedPreferences("MyPref", Context.MODE_PRIVATE);
-        //int errors = sharedPref.getInt("Error", 0);
-        //int volume = sharedPref.getInt("Volume", 0);
-        //boolean compression = sharedPref.getBoolean("Compression", false);
+        SharedPreferences sharedPref = getSharedPreferences("MyPref", Context.MODE_PRIVATE);
+        int errors = sharedPref.getInt("Error", 0);
+        int volume = sharedPref.getInt("Volume", 0);
+        boolean compression = sharedPref.getBoolean("Compression", false);
 
-        //updateValues(volume, errors, compression);
+        updateValues(volume, errors, compression);
 
     }
 
-    private void disconnect() {
-        if (btSocket!=null) {
-
-        SharedPreferences.Editor editor = getSharedPreferences("MyPref", Context.MODE_PRIVATE).edit();
-        editor.putInt("Error", Integer.parseInt(erCount.getText().toString()));
-        editor.putInt("Volume", volume.getProgress());
-        editor.putBoolean("Compression", audioOnOff.isEnabled());
-        editor.apply();
-
-            try {
-                System.out.println("Disconnected");
-                btSocket.close(); //close connection
-            }
-            catch (IOException e) {
-                onScreenMessage("Error");
-            }
-        }
-        onScreenMessage("Disconnected");
-        finish(); //return to the first layout
-    }
-
-    private void requestUpdate(){
-        System.out.println("In REQUEST");
-        if(!isReceiving){
+    private void requestUpdate() {
+        if (!isReceiving) {
             isReceiving = true;
             UpdateBT();
             new ReceiveBT().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            System.out.println("Request update");
         } else {
             new waitToUpdate().execute();
         }
     }
 
-    private void UpdateBT(){
-
-        if (btSocket!=null) {
+    private void UpdateBT() {
+        if (btSocket != null) {
 
             int onOff;
-            if(audioOnOff.isEnabled()){
+            if (audioOnOff.isEnabled()) {
                 onOff = 1;
-            }else{
+            } else {
                 onOff = 0;
             }
 
-            try{
+            try {
                 String request;
-                request = "{ \"TYPE\" : \"UPDATE\" , \"Volume\" :" + volume.getProgress() + ", \"Compression\" :" + onOff  + "}";
+                request = "{ \"TYPE\" : \"UPDATE\" , \"Volume\" :" + volume.getProgress() + ", \"Compression\" :" + onOff + "}";
 
                 btSocket.getOutputStream().write(request.toString().getBytes());
+                System.out.println("request send is: " + request);
 
-            }
-            catch (IOException e){
+            } catch (IOException e) {
                 disconnect();
                 onScreenMessage("Failed to send message");
             }
         }
     }
 
-    private void command(){
-
-        System.out.println("in command");
+    private void command() {
         int onOff;
-        if(audioOnOff.isEnabled()){
+        if (audioOnOff.isEnabled()) {
             onOff = 1;
-        }else{
+        } else {
             onOff = 0;
         }
-
-        try{
+        try {
             // Command is written in JSON syntax
             String command = "{ \"TYPE\" : \"COMMAND\" , \"Volume\" :" + volume.getProgress() + ", \"Compression\" :" + onOff + "}";
-            System.out.println("This is the command: " + command);
-
             btSocket.getOutputStream().write(command.getBytes());
-
-        }
-        catch (IOException e){
+            System.out.println("Command send is: " + command);
+        } catch (IOException e) {
             onScreenMessage("Failed to send command");
         }
-        //requestUpdate();
     }
 
     private void interpretMessage(String receivedMessage) throws JSONException {
@@ -230,19 +200,19 @@ public class ControlScreen extends AppCompatActivity {
         int compression = (Integer.parseInt(jobject.getString("Compression")));
 
         boolean comp;
-        if(compression == 1){
+        if (compression == 1) {
             comp = true;
-        }else{
+        } else {
             comp = false;
         }
 
-        System.out.println("Updating values with Volume = "+volume+" Error count = "+count+" Compression = "+comp);
+        System.out.println("Updating values with Volume = " + volume + " Error count = " + count + " Compression = " + comp);
 
-        updateValues(volume,count,comp);
+        updateValues(volume, count, comp);
 
     }
 
-    private void updateValues(int volumelvl, int errorCount, boolean compression){
+    private void updateValues(int volumelvl, int errorCount, boolean compression) {
 
         erCount.setText("Total error corrected: " + errorCount);
         audioOnOff.setChecked(compression);
@@ -252,8 +222,28 @@ public class ControlScreen extends AppCompatActivity {
         System.out.println("Values has been updated");
     }
 
-    private void onScreenMessage(String message){
-        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_SHORT).show();
+    private void disconnect() {
+        if (btSocket != null) {
+
+            SharedPreferences.Editor editor = getSharedPreferences("MyPref", Context.MODE_PRIVATE).edit();
+            editor.putInt("Error", Integer.parseInt(erCount.getText().toString().substring(23)));
+            editor.putInt("Volume", volume.getProgress());
+            editor.putBoolean("Compression", audioOnOff.isEnabled());
+            editor.apply();
+
+            try {
+                System.out.println("Disconnected");
+                btSocket.close(); //close connection
+            } catch (IOException e) {
+                onScreenMessage("Error");
+            }
+        }
+        onScreenMessage("Disconnected");
+        finish(); //return to the first layout
+    }
+
+    private void onScreenMessage(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
@@ -268,11 +258,11 @@ public class ControlScreen extends AppCompatActivity {
 
         //Tries to connect to bluetooth device
         @Override
-        protected Void doInBackground(Void... devices){
+        protected Void doInBackground(Void... devices) {
 
             System.out.println("ConnectBT do in background");
-            try{
-                if (btSocket == null || !isConnected){
+            try {
+                if (btSocket == null || !isConnected) {
                     //Tries to connect
                     myBluetooth = BluetoothAdapter.getDefaultAdapter(); //gets bluetooth adapter of the phone
                     BluetoothDevice BTDevice = myBluetooth.getRemoteDevice(address); //connect to the address of the device
@@ -281,8 +271,7 @@ public class ControlScreen extends AppCompatActivity {
                     btSocket.connect(); //start connection
                     System.out.println("Connects via bluetooth!");
                 }
-            }
-            catch (IOException e){
+            } catch (IOException e) {
                 ConnectSuccess = false;
             }
             return null;
@@ -294,11 +283,10 @@ public class ControlScreen extends AppCompatActivity {
             System.out.println("ConnectBT on post execute");
             super.onPostExecute(result);
 
-            if (!ConnectSuccess){
+            if (!ConnectSuccess) {
                 onScreenMessage("Connection Failed. Try again.");
                 finish(); // returns to devicelist
-            }
-            else{
+            } else {
                 onScreenMessage("Connected.");
                 isConnected = true;
             }
@@ -311,14 +299,13 @@ public class ControlScreen extends AppCompatActivity {
 
         @Override
         protected String doInBackground(Void... voids) {
-            System.out.println("inside receivebt");
 
             String receivedMessage = "";
             boolean done = false;
             //While loop that runs until a complete JSON object has been created
-            while(!done){
+            while (!done) {
 
-                System.out.println("Trying to complete JSON Object");
+                System.out.println("Receiving message, Trying to complete JSON Object");
                 byte[] mmBuffer = new byte[1024];
                 int numBytes = 0;
                 JSONObject jsonObject;
@@ -337,7 +324,7 @@ public class ControlScreen extends AppCompatActivity {
 
                 byte[] result = new byte[numBytes];
                 // Result array is created from number of bytes and filled with the data from mmBuffer
-                for(int i = 0; i < result.length; i++){
+                for (int i = 0; i < result.length; i++) {
                     result[i] = mmBuffer[i];
                 }
 
@@ -356,8 +343,9 @@ public class ControlScreen extends AppCompatActivity {
 
             return receivedMessage;
         }
+
         @Override
-        protected void onPostExecute(String receivedMessage){
+        protected void onPostExecute(String receivedMessage) {
 
             isReceiving = false;
             //Calls the interpretMessage with the receivedMessage from the doInBackground
@@ -369,13 +357,13 @@ public class ControlScreen extends AppCompatActivity {
         }
     }
 
-    private class autoUpdate extends AsyncTask<Void, Void, Void>{
+    private class autoUpdate extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
 
             try {
-                Thread.sleep(20000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -385,39 +373,34 @@ public class ControlScreen extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void result) {
+            System.out.println("Auto updating");
             requestUpdate();
             new autoUpdate().execute();
             onScreenMessage("Auto update sent");
         }
     }
 
-    private class waitToUpdate extends AsyncTask<Void, Void, Void>{
+    private class waitToUpdate extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
-
-            System.out.println("Inside while loop in wait to update");
             try {
+                System.out.println("Waiting for permission to update");
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
             return null;
         }
+
         @Override
         protected void onPostExecute(Void result) {
-
-
-            if(isReceiving){
+            if (isReceiving) {
                 new waitToUpdate().execute();
             } else {
                 requestUpdate();
             }
-
         }
-
     }
-
 }
 

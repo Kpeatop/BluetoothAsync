@@ -18,12 +18,10 @@ import android.bluetooth.BluetoothDevice;
 public class DeviceList extends AppCompatActivity {
 
     // Declaring
-    Button btnPaired;
-    ListView pairedDeviceList;
-
+    private Button btnPaired;
+    private ListView pairedDeviceList;
     private BluetoothAdapter myBluetooth = null;
     private Set<BluetoothDevice> pairedDevices;
-
     public static String EXTRA_ADDRESS = "device_address";
 
     @Override
@@ -66,23 +64,18 @@ public class DeviceList extends AppCompatActivity {
 
         if (pairedDevices.size() > 0){
             for(BluetoothDevice bt : pairedDevices) {
-
-                pairedList.add(bt.getName() + "\n" + bt.getAddress()); //Adds all the paired devices to a list, where the list elements will be clickable
-
+                pairedList.add(bt.getName() + "\n" + bt.getAddress()); // Adds all the paired devices to a list, where the list elements will be clickable
             }
         }
         else{
             onScreenMessage("No Paired Bluetooth Devices Found.");
         }
-
         final ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, pairedList);
         pairedDeviceList.setAdapter(adapter);
-
         pairedDeviceList.setOnItemClickListener(myListClickListener); //Method called when the device from the list is clicked
-
     }
 
-    //The method for clicking on one of the paired devices
+    //The method is called when the user clicks a paired device
     private AdapterView.OnItemClickListener myListClickListener = new AdapterView.OnItemClickListener() {
 
         public void onItemClick (AdapterView av, View v, int arg2, long arg3){
@@ -100,8 +93,7 @@ public class DeviceList extends AppCompatActivity {
 
     private void onScreenMessage(String message){
 
-        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(),message,Toast.LENGTH_SHORT).show();
 
     }
-
 }
